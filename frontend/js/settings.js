@@ -10,8 +10,11 @@ var settings =
     y: 1200,
   },
 
+  gridSpace: {
+    x: 30,
+    y: 24,
+  },
+
   // do debugy things
   debug: true,
-
-
 }

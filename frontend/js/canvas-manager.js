@@ -111,6 +111,7 @@ function View(canvas) {
   this.ctx = canvas.getContext("2d");
   this.mouse = new Mouse();
   this.drag = new Drag(this.mouse, this);
+  this.drawables = [];
 }
 
 View.prototype = {
@@ -125,6 +126,10 @@ View.prototype = {
       that.display();
       requestAnimationFrame(() => that.display());
     });
+  },
+
+  addDrawable(drawable) {
+    this.drawables.push(drawable);
   },
 
   loop() {
@@ -144,10 +149,17 @@ View.prototype = {
     this.drag.update();
     this.apply(this.ctx);
     this.ctx.drawImage(this.img, 0, 0);
+    // draw while in the transform?
+
+    for (var i = 0; i < this.drawables.length; i++) {
+      let draw = this.drawables[i];
+      this.ctx.drawImage(draw.img, draw.location.x, draw.location.y);
+    }
     this.ctx.resetTransform(); // reset transform
 
     //TODO: How to provide a way for the user to overwrite this?
-    this.drawGridOverlay(30, 24);
+    //TODO: Can we do this while in the transform?
+    this.drawGridOverlay(settings.gridSpace.x, settings.gridSpace.y);
   },
 
   drawGridOverlay(horizontalBoxes, verticalBoxes) {

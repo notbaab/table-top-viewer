@@ -8,6 +8,14 @@ window.onload = function() {
   main(window);
 };
 
+
+function gridSpaceToWorld(gridX, gridY, boxWidth, boxHeight) {
+  return {
+    x: gridX * boxWidth,
+    y: gridY * boxHeight,
+  };
+};
+
 // should read the settings here maybe?
 function App() {
   this.connection = new FancyWebSocket( settings.webSocketUrl );
@@ -22,6 +30,9 @@ function App() {
   };
 
   this.view = new View(document.getElementById(settings.canvasId));
+  // can we draw an avatar at grid 10, 9
+  // get the non transform sized of the grid stuff so we can use the
+  // toScreen conversion
 
   this.connection.bind( "connect", this.handleInitialConnection, this );
   this.connection.bind( "message", this.onMessage, this )
@@ -58,7 +69,25 @@ App.prototype = {
       that.background = img;
       that.scaleBackgroundToFull();
       that.view.start(img);
+      that.postBackgroundLoad();
     }
+  },
+
+  postBackgroundLoad() {
+    this.fullBoxWidth = this.background.width / settings.gridSpace.x;
+    this.fullBoxHeight = this.background.height / settings.gridSpace.y;
+    let location = gridSpaceToWorld(10, 9, this.fullBoxWidth, this.fullBoxHeight);
+
+    let wizardImg = new Image();
+    wizardImg.src = "img/wizard.png";
+
+    let wizard = {
+      img: wizardImg,
+      location: location
+    }
+    this.wizard = wizard;
+
+    this.view.addDrawable(wizard);
   },
 
   scaleBackgroundToFull: function() {
