@@ -1,1 +1,4 @@
 *.sublime-workspace
+*.DS_Store
+# ignore binary data
+table-top
