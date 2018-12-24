@@ -11,6 +11,36 @@ window.onload = function() {
 
 function gridSpaceToWorld(gridX, gridY, boxWidth, boxHeight) {
   return {
+    startX: gridX * boxWidth,
+    startY: gridY * boxHeight,
+    endX: gridX * boxWidth + boxWidth,
+    endY: gridY * boxHeight + boxHeight,
+  };
+};
+
+function centerImageInGrid(gridX, gridY, boxWidth, boxHeight, img) {
+  let gridLoc = gridSpaceToWorld(gridX, gridY, boxWidth, boxHeight);
+
+  let widthScale = img.width / boxWidth;
+  let heightScale = img.height / boxHeight;
+  let biggerScale = widthScale > heightScale ? widthScale : heightScale;
+
+  let destWidth = img.width / biggerScale;
+  let destHeight = img.height / biggerScale;
+
+  // how wide does is the image in comparison to the boxWidth
+  let xOffset = (boxWidth - img.width / biggerScale) / 2;
+  let yOffset = (boxHeight - img.height / biggerScale) / 2;
+  return {
+    x: gridLoc.startX + xOffset,
+    y: gridLoc.startY + yOffset,
+    width: destWidth,
+    height: destHeight,
+  }
+};
+
+function centerGridSpaceToWorld(gridX, gridY, boxWidth, boxHeight) {
+  return {
     x: gridX * boxWidth,
     y: gridY * boxHeight,
   };
@@ -78,16 +108,31 @@ App.prototype = {
     this.fullBoxHeight = this.background.height / settings.gridSpace.y;
     let location = gridSpaceToWorld(10, 9, this.fullBoxWidth, this.fullBoxHeight);
 
+    // TODO: Avoid this vs that pattern, I don't like it...
+    let that = this;
+
     let wizardImg = new Image();
     wizardImg.src = "img/wizard.png";
+    wizardImg.onload = function() {
+      // TODO: Generalize this
+      let drawData = centerImageInGrid(1, 7, that.fullBoxWidth,
+                                       that.fullBoxHeight, wizardImg);
 
-    let wizard = {
-      img: wizardImg,
-      location: location
+      // TODO: Do like a proper frame thingamjig. For now
+      // we know it's just a single image
+      let frames = [
+        { x: 0, y: 0, width: wizardImg.width, height: wizardImg.height},
+      ];
+      let wizard = {
+        img: wizardImg,
+        drawData: drawData,
+        frames: frames,
+        frameIdx: 0,
+      }
+      that.wizard = wizard;
+
+      that.view.addDrawable(wizard);
     }
-    this.wizard = wizard;
-
-    this.view.addDrawable(wizard);
   },
 
   scaleBackgroundToFull: function() {

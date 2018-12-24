@@ -153,7 +153,10 @@ View.prototype = {
 
     for (var i = 0; i < this.drawables.length; i++) {
       let draw = this.drawables[i];
-      this.ctx.drawImage(draw.img, draw.location.x, draw.location.y);
+      let dest = draw.drawData;
+      let frame = draw.frames[draw.frameIdx];
+      this.ctx.drawImage(draw.img, frame.x, frame.y, frame.width, frame.height,
+                         dest.x, dest.y, dest.width, dest.height);
     }
     this.ctx.resetTransform(); // reset transform
 
