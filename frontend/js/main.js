@@ -1,31 +1,41 @@
-window.onload = function() {
-  // add some key listeners from key_listener.js
-  // window.addEventListener('keyup', function(event) { KeyListener.onKeyup(event); }, false);
-  // window.addEventListener('keydown', function(event) { KeyListener.onKeydown(event); }, false);
+function main(w) {
+  w.app = new App();
+  w.app.init();
+  w.app.setCurrentMap('img/map.jpg');
+}
 
-  this.app = new App();
-  this.app.init();
+window.onload = function() {
+  main(window);
 };
 
-
-// should read teh settings here maybe?
+// should read the settings here maybe?
 function App() {
   this.connection = new FancyWebSocket( settings.webSocketUrl );
   console.log(this.connection.state());
   this.events = [];
 
-  // TODO: Need to make a sync command from the server so it can send all the
-  // game objects that were previously created.
+  // TODO: Set default
+  this.background = undefined;
+  this.windowSize = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
+
+  this.view = new View(document.getElementById(settings.canvasId));
+
   this.connection.bind( "connect", this.handleInitialConnection, this );
-  // this.connection.bind( "createPlayer", this.createGameObj, this );
-  // this.connection.bind( "createObject", this.createGameObj, this );
   this.connection.bind( "message", this.onMessage, this )
-  // this.connection.bind( "sync", this.sync, this )
 };
 
 App.prototype = {
   init: function() {
     console.log("Doing shit")
+    this.canvas = document.getElementById(settings.canvasId);
+    this.context = this.canvas.getContext('2d');
+
+    // size canvas to the given size
+    this.canvas.width = this.windowSize.width;
+    this.canvas.height = this.windowSize.height;
   },
 
   handleInitialConnection: function(msg) {
@@ -36,5 +46,27 @@ App.prototype = {
   onMessage: function(msg) {
     console.log("update shit")
     console.log(msg)
+  },
+
+  setCurrentMap: function(src) {
+    let img = new Image();
+    img.src = src;
+    let ctx = this.context;
+    let that = this;
+
+    img.onload = function() {
+      that.background = img;
+      that.scaleBackgroundToFull();
+      that.view.start(img);
+    }
+  },
+
+  scaleBackgroundToFull: function() {
+    // scales the background to try to fill the entire canvas
+    // by picking the dimension that needs to be scaled the most
+    let widthScale = this.background.width / this.canvas.width
+    let heightScale = this.background.height / this.canvas.height
+    let biggerScale = widthScale > heightScale ? widthScale : heightScale;
+    this.view.setScale(1 / biggerScale);
   },
 }
