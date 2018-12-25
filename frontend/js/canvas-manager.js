@@ -60,6 +60,7 @@ function Mouse() {
   this.active = false;
   this.bounds = null;
   this.eventNames = "mousemove,mousedown,mouseup,mouseout,mouseover,mousewheel,DOMMouseScroll".split(",");
+  this.listeners = {};
 }
 
 Mouse.prototype = {
@@ -86,12 +87,27 @@ Mouse.prototype = {
       this.w = -e.detail;
       e.preventDefault();
     }
+
+    if (this.listeners[t]) {
+      for (var i = 0; i < this.listeners[t].length; i++) {
+        this.listeners[t][i](e);
+      }
+    }
   },
 
   start(element) {
     this.element = element === undefined ? document : element;
     this.eventNames.forEach(name => document.addEventListener(name, this.event.bind(this)));
+    // Don't allow right clicks
+    document.addEventListener("contextmenu", (e) => e.preventDefault(), false);
     this.active = true;
+  },
+
+  addEventListener(eventName, func) {
+    if(!this.listeners[eventName]) {
+      this.listeners[eventName] = [];
+    }
+    this.listeners[eventName].push(func);
   },
 };
 
@@ -120,24 +136,10 @@ View.prototype = {
     this.img = img;
     // resizeCanvas();
     // window.addEventListener("resize", resizeCanvas);
-    that = this;
-    this.loop();
-    requestAnimationFrame(() => {
-      that.display();
-      requestAnimationFrame(() => that.display());
-    });
   },
 
   addDrawable(drawable) {
     this.drawables.push(drawable);
-  },
-
-  loop() {
-    that = this;
-    this.display();
-    requestAnimationFrame(() => {
-      that.loop();
-    });
   },
 
   display() { // call once per frame
@@ -160,7 +162,6 @@ View.prototype = {
     }
     this.ctx.resetTransform(); // reset transform
 
-    //TODO: How to provide a way for the user to overwrite this?
     //TODO: Can we do this while in the transform?
     this.drawGridOverlay(settings.gridSpace.x, settings.gridSpace.y);
   },
