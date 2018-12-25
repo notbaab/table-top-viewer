@@ -2,3 +2,7 @@
 *.DS_Store
 # ignore binary data
 table-top
+
+# ignore our test image files
+frontend/img/wizard.png
+frontend/img/map.jpg
