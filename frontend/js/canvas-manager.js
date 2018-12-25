@@ -144,6 +144,12 @@ View.prototype = {
 
   display() { // call once per frame
     this.canvas.width = this.canvas.width;
+    this.drawWorld();
+  },
+
+  // Resets the transform, applies the current transform to the context,
+  // does all the world drawing, then resets the transform back.
+  drawWorld() {
     this.ctx.resetTransform(); // reset transform
     this.ctx.globalAlpha = 1; // reset alpha
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -151,7 +157,6 @@ View.prototype = {
     this.drag.update();
     this.apply(this.ctx);
     this.ctx.drawImage(this.img, 0, 0);
-    // draw while in the transform?
 
     for (var i = 0; i < this.drawables.length; i++) {
       let draw = this.drawables[i];
@@ -160,33 +165,30 @@ View.prototype = {
       this.ctx.drawImage(draw.img, frame.x, frame.y, frame.width, frame.height,
                          dest.x, dest.y, dest.width, dest.height);
     }
-    this.ctx.resetTransform(); // reset transform
 
-    //TODO: Can we do this while in the transform?
-    this.drawGridOverlay(settings.gridSpace.x, settings.gridSpace.y);
+    this.drawGridOverlay(this.img.width, this.img.height, settings.gridSpace.x, settings.gridSpace.y);
+    this.ctx.resetTransform(); // reset transform
   },
 
-  drawGridOverlay(horizontalBoxes, verticalBoxes) {
-    // draw a grid over the world image
-    let start = this.toScreen(0, 0);
-    let end = this.toScreen(this.img.width, this.img.height);
-    let width = end.x - start.x;
-    let height = end.y - start.y;
-
+  // Draws a grid with width and height with the number of horizontal and
+  // vertical boxes. Doesn't assume width and height will be the same so
+  // can result in elongated boxes
+  drawGridOverlay(width, height, horizontalBoxes, verticalBoxes) {
     let boxwidth = width / horizontalBoxes;
     let boxheight = height / verticalBoxes;
 
-    for (var x = start.x; x <= end.x; x += boxwidth) {
-      this.ctx.moveTo(0.5 + x, start.y);
-      this.ctx.lineTo(0.5 + x, end.y);
+    for (var x = 0; x <= width; x += boxwidth) {
+      this.ctx.moveTo(0.5 + x, 0);
+      this.ctx.lineTo(0.5 + x, height);
     }
 
-    for (var y = start.y; y <= end.y; y += boxheight) {
-      this.ctx.moveTo(start.x, 0.5 + y);
-      this.ctx.lineTo(end.x, 0.5 + y);
+    for (var y = 0; y <= height; y += boxheight) {
+      this.ctx.moveTo(0, 0.5 + y);
+      this.ctx.lineTo(width, 0.5 + y);
     }
 
-    this.ctx.strokestyle = "black";
+    this.ctx.strokeStyle = "black";
+    this.ctx.lineWidth = 3;
     this.ctx.stroke();
   },
 
