@@ -143,7 +143,15 @@ View.prototype = {
   },
 
   display() { // call once per frame
+    this.drag.update();
+    if(!this.dirty) {
+      return;
+    }
+    console.log("drawing display");
+    // clear the canvas
     this.canvas.width = this.canvas.width;
+
+    // draw the world
     this.drawWorld();
   },
 
@@ -153,9 +161,7 @@ View.prototype = {
   drawWorld() {
     this.ctx.resetTransform(); // reset transform
     this.ctx.globalAlpha = 1; // reset alpha
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    this.drag.update();
     this.apply(this.ctx);
 
     // draw the background image first.
