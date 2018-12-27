@@ -1,46 +1,57 @@
-function gridSpaceToWorld(gridX, gridY, boxWidth, boxHeight) {
-  return {
-    startX: gridX * boxWidth,
-    startY: gridY * boxHeight,
-    endX: gridX * boxWidth + boxWidth,
-    endY: gridY * boxHeight + boxHeight,
-  };
-};
-
-function centerImageInGrid(gridX, gridY, boxWidth, boxHeight, img) {
-  let gridLoc = gridSpaceToWorld(gridX, gridY, boxWidth, boxHeight);
-
-  let widthScale = img.width / boxWidth;
-  let heightScale = img.height / boxHeight;
-  let biggerScale = widthScale > heightScale ? widthScale : heightScale;
-
-  let destWidth = img.width / biggerScale;
-  let destHeight = img.height / biggerScale;
-
-  // how wide does is the image in comparison to the boxWidth
-  let xOffset = (boxWidth - img.width / biggerScale) / 2;
-  let yOffset = (boxHeight - img.height / biggerScale) / 2;
-  return {
-    x: gridLoc.startX + xOffset,
-    y: gridLoc.startY + yOffset,
-    width: destWidth,
-    height: destHeight,
-  };
-}
-
 class World {
-  constructor(gridWidth, gridHeight) {
+  constructor(gridBoxWidth, gridBoxHeight, gridWidth, gridHeight) {
+    this.gridBoxWidth = gridBoxWidth;
+    this.gridBoxHeight = gridBoxHeight;
     this.gridWidth = gridWidth;
     this.gridHeight = gridHeight;
+
+    // some book keeping variables to draw some extra data
+    this.pixelWidth = gridWidth * this.gridBoxWidth;
+    this.pixelHeight = gridHeight * this.gridBoxHeight;
+    this.boxWidth =
+
     this.objects = [];
     this.selectedObject = undefined;
   }
 
   toGrid(x, y) {
     return {
-      x: Math.floor(x / this.gridWidth),
-      y: Math.floor(y / this.gridHeight),
+      x: Math.floor(x / this.gridBoxWidth),
+      y: Math.floor(y / this.gridBoxHeight),
     };
+  }
+
+  draw(ctx, startX, endX, startY, endY) {
+    if (startX !== undefined) {
+      // drawing a subset of the world
+    }
+    // draw the objects
+    for (var i = 0; i < this.objects.length; i++) {
+      let obj = this.objects[i]
+      // give the objects location or let them decide?
+      obj.draw(ctx);
+    }
+    //
+    this.drawGridOverlay(ctx);
+  }
+
+  // Draws a grid with width and height with the number of horizontal and
+  // vertical boxes. Doesn't assume width and height will be the same so
+  // can result in elongated boxes
+  drawGridOverlay(ctx) {
+    for (var x = 0; x <= this.pixelWidth; x += this.gridBoxWidth) {
+      ctx.moveTo(0.5 + x, 0);
+      ctx.lineTo(0.5 + x, this.pixelHeight);
+    }
+
+    for (var y = 0; y <= this.pixelHeight; y += this.gridBoxHeight) {
+      ctx.moveTo(0, 0.5 + y);
+      ctx.lineTo(this.pixelWidth, 0.5 + y);
+    }
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 3;
+    ctx.stroke();
   }
 
   addObject(object) {
@@ -48,11 +59,8 @@ class World {
   }
 
   moveObject(obj, gridX, gridY) {
-    obj.drawData = centerImageInGrid(gridX, gridY, this.gridWidth, this.gridHeight, obj.img);
-    obj.worldData = {
-      gridX: gridX,
-      gridY: gridY,
-    }
+    obj.gridX = gridX;
+    obj.gridY = gridY;
   }
 
   selectObject(obj) {
@@ -67,8 +75,8 @@ class World {
     let grid = this.toGrid(x, y);
 
     if (this.selectedObject &&
-      this.selectedObject.worldData.gridX === grid.x &&
-      this.selectedObject.worldData.gridY === grid.y ){
+      this.selectedObject.gridX === grid.x &&
+      this.selectedObject.gridY === grid.y ){
       // clicking in the same spot, unselect object
       this.unselectObject(this.selectedObject);
     } else if (this.selectedObject) {
@@ -79,7 +87,7 @@ class World {
       // select an object
       for (var i = 0; i < this.objects.length; i++) {
         let obj = this.objects[i];
-        if (obj.worldData.gridX === grid.x && obj.worldData.gridY === grid.y) {
+        if (obj.gridX === grid.x && obj.gridY === grid.y) {
           this.selectedObject = obj;
         }
       }

@@ -148,7 +148,8 @@ View.prototype = {
   },
 
   // Resets the transform, applies the current transform to the context,
-  // does all the world drawing, then resets the transform back.
+  // calls draw on all the drawable etities with the transformed context,
+  // then resets the transform back.
   drawWorld() {
     this.ctx.resetTransform(); // reset transform
     this.ctx.globalAlpha = 1; // reset alpha
@@ -156,40 +157,18 @@ View.prototype = {
 
     this.drag.update();
     this.apply(this.ctx);
+
+    // draw the background image first.
+    // TODO: Should we move this to world as well?
     this.ctx.drawImage(this.img, 0, 0);
 
+    // Loop over the drawables and call draw.
     for (var i = 0; i < this.drawables.length; i++) {
-      let draw = this.drawables[i];
-      let dest = draw.drawData;
-      let frame = draw.frames[draw.frameIdx];
-      this.ctx.drawImage(draw.img, frame.x, frame.y, frame.width, frame.height,
-                         dest.x, dest.y, dest.width, dest.height);
+      // TODO: Determine how to filter out objects not in the view port
+      this.drawables[i].draw(this.ctx);
     }
 
-    this.drawGridOverlay(this.img.width, this.img.height, settings.gridSpace.x, settings.gridSpace.y);
     this.ctx.resetTransform(); // reset transform
-  },
-
-  // Draws a grid with width and height with the number of horizontal and
-  // vertical boxes. Doesn't assume width and height will be the same so
-  // can result in elongated boxes
-  drawGridOverlay(width, height, horizontalBoxes, verticalBoxes) {
-    let boxwidth = width / horizontalBoxes;
-    let boxheight = height / verticalBoxes;
-
-    for (var x = 0; x <= width; x += boxwidth) {
-      this.ctx.moveTo(0.5 + x, 0);
-      this.ctx.lineTo(0.5 + x, height);
-    }
-
-    for (var y = 0; y <= height; y += boxheight) {
-      this.ctx.moveTo(0, 0.5 + y);
-      this.ctx.lineTo(width, 0.5 + y);
-    }
-
-    this.ctx.strokeStyle = "black";
-    this.ctx.lineWidth = 3;
-    this.ctx.stroke();
   },
 
   apply(ctx) {

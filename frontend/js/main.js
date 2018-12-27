@@ -68,39 +68,25 @@ App.prototype = {
     this.fullBoxWidth = this.background.width / settings.gridSpace.x;
     this.fullBoxHeight = this.background.height / settings.gridSpace.y;
 
-    this.world = new World(this.fullBoxWidth, this.fullBoxHeight);
+    this.world = new World(this.fullBoxWidth, this.fullBoxHeight,
+                           settings.gridSpace.x, settings.gridSpace.y);
     this.setupMouseListener();
 
     // TODO: Avoid this vs that pattern, I don't like it...
     let that = this;
 
+
     wizardImg.onload = function() {
-      let worldData = {
-        gridX: 1,
-        gridY: 7,
-      };
-
-      // TODO: Generalize this
-      let drawData = centerImageInGrid(worldData.gridX, worldData.gridY,
-        that.fullBoxWidth, that.fullBoxHeight,
-        wizardImg);
-
       // TODO: Do like a proper frame thingamjig. For now
       // we know it's just a single image
       let frames = [
         { x: 0, y: 0, width: wizardImg.width, height: wizardImg.height},
       ];
-      let wizard = {
-        img: wizardImg,
-        drawData: drawData,
-        frames: frames,
-        frameIdx: 0,
-        worldData: worldData,
-      };
-      that.wizard = wizard;
 
-      that.view.addDrawable(wizard);
-      that.world.addObject(wizard);
+      let player = new PlayerUnit(wizardImg, frames, 1, 7, that.fullBoxWidth, that.fullBoxHeight);
+
+      that.world.addObject(player);
+      that.view.addDrawable(that.world);
 
       // TODO: Use promises
       that.start();
