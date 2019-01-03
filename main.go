@@ -1,55 +1,58 @@
 package main
 
 import (
-	"github.com/gorilla/websocket"
 	"net/http"
 	"os"
+
+	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
+	// "github.com/jmoiron/sqlx"
 )
 
 func cleanUpSocket(conn *websocket.Conn) *Message {
 	Info.Printf("Cleaning up connection from %s\n", conn.RemoteAddr())
+	err := conn.Close()
+
+	if err != nil {
+		Error.Println(err.Error())
+	}
 	return nil
 }
 
 // TODO: SHould this be in server vars?
-func initializeConnectionData() (map[*websocket.Conn]string, map[string]*Client) {
-	Trace.Println("Initialize connection varibles")
-	// TODO: Access if we need the clients variable
-	// clients = make(map[*websocket.Conn]*ClientData)
-	connections := make(map[*websocket.Conn]string)
-	clientIdMap := make(map[string]*Client)
-	return connections, clientIdMap
-
-}
-func setupFileServer(dir string) {
+func setupFileServer(dir string) http.Handler {
 	// handle all requests by serving a file of the same name
 	fs := http.Dir(dir)
 	fileHandler := http.FileServer(fs)
-	http.Handle("/", fileHandler)
+	return fileHandler
 }
 
-func setupNetworkController() NetworkController {
-	controller := NewNetworkController(HandleClientEvent,
-		cleanUpSocket,
-		initializeClientData)
-	http.HandleFunc("/ws", controller.WsHandler)
-	return controller
+func setupRoutes(controller NetworkController) *mux.Router {
+	r := mux.NewRouter()
+	wapi := r.PathPrefix("/ws").Subrouter()
+	wapi.HandleFunc("/{roomId}", controller.WsHandler)
+
+	// TODO: The static router should be done in nginx I think
+	staticFileHandler := setupFileServer("frontend")
+	r.PathPrefix("/").Handler(staticFileHandler)
+
+	return r
 }
 
 func main() {
 	InitLogger(os.Stdout, os.Stdout, os.Stdout, os.Stderr)
-	setupFileServer("frontend")
-	setupNetworkController()
-	// controller := setupNetworkController()
+	// db := setupDatabase("data.db")
+	setupDatabase("data.db")
 
-	// TODO: Remove them as global variables
-	connections, clientIdMap = initializeConnectionData()
+	controller := NewNetworkController()
+	mux := setupRoutes(controller)
+
 	Info.Println("Starting")
-	runHttpServer("0.0.0.0:5658")
+	runHttpServer("0.0.0.0:5658", mux)
 }
 
-func runHttpServer(addr string) {
+func runHttpServer(addr string, mux http.Handler) {
 	// this call blocks -- the progam runs here forever
-	err := http.ListenAndServe(addr, nil)
+	err := http.ListenAndServe(addr, mux)
 	Warning.Println(err.Error())
 }
