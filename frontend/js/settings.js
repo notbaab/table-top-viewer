@@ -3,7 +3,7 @@
 var settings =
 {
   // network settings
-  webSocketUrl: "ws://" + window.location.hostname + ":" + window.location.port +"/ws", // the websocket passed to the
+  webSocketUrl: "ws://" + window.location.hostname + ":" + window.location.port +"/ws/1234", // the websocket passed to the
   canvasId: "gamecanvas",
   defaultCanvasDim: {
     x: 1600,

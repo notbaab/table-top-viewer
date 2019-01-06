@@ -1,17 +1,16 @@
 {
-	"folders":
-	[
-		{
-			"path": "."
-		}
-	],
-      "settings": {
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
     "GoSublime": {
+      "comp_lint_enabled": true,
       "env": {
         "GOPATH": "$HOME/Dropbox/programming/go:$HOME/go"
       },
-      "fmt_enabled": true,
-      "comp_lint_enabled": true,
+      "fmt_enabled": true
     }
   }
 }
