@@ -1,4 +1,4 @@
-package main
+package table_top_viewer
 
 import (
 	"net/http"
@@ -39,10 +39,8 @@ func setupRoutes(controller NetworkController) *mux.Router {
 	return r
 }
 
-func main() {
+func Start() {
 	InitLogger(os.Stdout, os.Stdout, os.Stdout, os.Stderr)
-	// db := setupDatabase("data.db")
-	setupDatabase("data.db")
 
 	controller := NewNetworkController()
 	mux := setupRoutes(controller)

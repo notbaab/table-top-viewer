@@ -1,5 +1,5 @@
 // backend node for managing connections
-package main
+package table_top_viewer
 
 import (
 	"log"

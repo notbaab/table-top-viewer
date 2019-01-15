@@ -1,4 +1,4 @@
-package main
+package table_top_viewer
 
 import (
 	// "encoding/json"

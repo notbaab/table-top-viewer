@@ -1,73 +1,68 @@
-package main
+package table_top_viewer
 
 import (
-	// "database/sql"
-
-	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var db *sqlx.DB
-
 var schema = `
+CREATE TABLE IF NOT EXISTS User (
+    id  integer PRIMARY KEY AUTOINCREMENT,
+    username string,
+    passhash string
+);
+
 CREATE TABLE IF NOT EXISTS Game (
     id integer PRIMARY KEY AUTOINCREMENT,
-    url text
+    gm_id integer,
+    url text,
+    game_data text,
+    FOREIGN KEY (gm_id) REFERENCES User(id)
 );
-
-CREATE TABLE IF NOT EXISTS Player (
-    id integer PRIMARY KEY AUTOINCREMENT,
-    class_id int,
-    game_id int,
-    FOREIGN KEY (class_id) REFERENCES Class(id)
-    FOREIGN KEY (game_id) REFERENCES Game(id)
-);
-
-CREATE TABLE IF NOT EXISTS Class (
-    id integer PRIMARY KEY AUTOINCREMENT,
-    img_url text,
-    frame_data text,
-    stats text
-);
-`
-
-var testQuery = `
-INSERT INTO Game (url) VALUES('/12345');
-INSERT INTO Class (img_url, frame_data, stats) VALUES('img/wizard.png', '{"id":12}', '{"move":6}');
-INSERT INTO Class (img_url, frame_data, stats) VALUES('img/wizard.png', '{"id":123}', '{"move":6}');
-INSERT INTO Player (class_id, game_id) VALUES(1, 1);
-INSERT INTO Player (class_id, game_id) VALUES(2, 1);
 `
 
 type Game struct {
-	Id  int    `db:"id"`
-	Url string `db:"url"`
+	Id       int    `db:"id"`
+	Url      string `db:"url"`
+	GmId     int    `db:"gm_id"`
+	GameData string `db:"game_data"`
 }
 
-type Class struct {
-	Id        int    `db:"id"`
-	ImageUrl  string `db:"img_url"`
-	FrameData string `db:"frame_data"`
-	Stats     string `db:"stats"`
-}
-
-type Player struct {
-	Id      int   `db:"id"`
-	ClassId int   `db:"class_id"`
-	GameId  int   `db:"game_id"`
-	Class   Class `db:"class"`
-	Game    Game  `db:"game"`
+type User struct {
+	Id       int    `db:"id"`
+	Username string `db:"username"`
+	Passhash string `db:"passhash"`
 }
 
 func runSchema(db *sqlx.DB) {
 	db.MustExec(schema)
 }
 
-func setupDatabase(database string) *sqlx.DB {
+func RunStatment(db *sqlx.DB, sql string) {
+	db.MustExec(sql)
+}
+
+func UpdateGame(db *sqlx.DB, game Game) {
+	sqlStatement := `UPDATE Game
+            SET game_data = ?
+            WHERE id = ?;`
+
+	db.MustExec(sqlStatement, game.GameData, game.Id)
+}
+
+func GetGame(db *sqlx.DB, id int) (Game, error) {
+	game := Game{}
+	err := db.Get(&game, "SELECT * FROM Game WHERE id=?", id)
+	if err != nil {
+		return game, err
+	}
+
+	return game, nil
+}
+
+func SetupDatabase(database string) *sqlx.DB {
 	db := sqlx.MustConnect("sqlite3", database)
 	runSchema(db)
-	other(db)
 
 	return db
 }
@@ -82,19 +77,40 @@ func setupDatabase(database string) *sqlx.DB {
 //         JOIN Class on player.class_id = class.id WHERE game.id = 1;`
 
 // }
+// var id int
+// var user User
+// rows, err := db.NamedQuery("INSERT INTO users (email) VALUES (:email) RETURNING id", user)
+// // handle err
+// if rows.Next() {
+//     rows.Scan(&id)
+// }
+// type Player struct {
+//     Id      int   `db:"id"`
+//     ClassId int   `db:"class_id"`
+//     GameId  int   `db:"game_id"`
+//     Class   Class `db:"class"`
+//     Game    Game  `db:"game"`
+// }
 
-func other(db *sqlx.DB) {
-	var players []Player
-	query := `SELECT
-        player.*,
-        game.id "game.id",
-        game.url "game.url"
-        FROM player
-        JOIN Game ON player.game_id = game.id where game.id = 1;`
-	err := db.Select(&players, query)
-	if err != nil {
-		Error.Fatalln(err.Error())
-	}
-	fmt.Printf("%+v\n", players[0])
-	fmt.Printf("%+v\n", players[0].Game.Url)
-}
+// type Class struct {
+//     Id        int    `db:"id"`
+//     ImageUrl  string `db:"img_url"`
+//     FrameData string `db:"frame_data"`
+//     Stats     string `db:"stats"`
+// }
+// this was annoying to figure out, I'm keeping it
+// func other(db *sqlx.DB) {
+// 	var players []Player
+// 	query := `SELECT
+//         player.*,
+//         game.id "game.id",
+//         game.url "game.url"
+//         FROM player
+//         JOIN Game ON player.game_id = game.id where game.id = 1;`
+// 	err := db.Select(&players, query)
+// 	if err != nil {
+// 		Error.Fatalln(err.Error())
+// 	}
+// 	fmt.Printf("%+v\n", players[0])
+// 	fmt.Printf("%+v\n", players[0].Game.Url)
+// }
