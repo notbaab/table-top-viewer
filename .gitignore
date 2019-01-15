@@ -1,8 +1,10 @@
 *.sublime-workspace
 *.DS_Store
+*.db
 vendor
 # ignore binary data
 table-top
+cli/cli
 
 # ignore our test image files
 frontend/img/wizard.png
