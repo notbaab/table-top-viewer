@@ -28,12 +28,17 @@ var startCmd = &cobra.Command{
 	Long:  `Start it. No arguments allowed yet`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Staring")
-		table_top_viewer.Start()
+		database, _ := cmd.Flags().GetString("database")
+		frontendFolder, _ := cmd.Flags().GetString("frontend")
+
+		table_top_viewer.Start(frontendFolder, database)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(startCmd)
+	startCmd.Flags().StringP("database", "d", "", "da database")
+	startCmd.Flags().StringP("frontend", "f", "", "Frontend asset folder")
 
 	// Here you will define your flags and configuration settings.
 

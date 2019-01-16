@@ -30,7 +30,7 @@ var populateDatabase = `
 INSERT INTO User (username, passhash) VALUES('dude1', 'dude1');
 INSERT INTO User (username, passhash) VALUES('dude2', 'dude2');
 INSERT INTO User (username, passhash) VALUES('dude3', 'dude3');
-INSERT INTO Game (gm_id, url, game_data) VALUES(1, '/12345', "{}");
+INSERT INTO Game (gm_id, url, game_data) VALUES(1, '12345', "{}");
 `
 
 // initDatabaseCmd represents the initDatabase command
@@ -40,11 +40,24 @@ var initDatabaseCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		room, _ := cmd.Flags().GetString("room")
+		database, _ := cmd.Flags().GetString("database")
+		if room == "" {
+			fmt.Println("No Room")
+			// don't do anything
+			return
+		}
+
+		if database == "" {
+			fmt.Println("No database")
+			// don't do anything
+			return
+		}
+
 		fmt.Println("initDatabase called")
 		// I'm doing a bad job here but eh
-		db := table_top_viewer.SetupDatabase("data.db")
+		db := table_top_viewer.SetupDatabase(database)
 		table_top_viewer.RunStatment(db, deleteDatabase)
-		db = table_top_viewer.SetupDatabase("data.db")
+		db = table_top_viewer.SetupDatabase(database)
 
 		table_top_viewer.RunStatment(db, populateDatabase)
 		game, err := table_top_viewer.GetGame(db, 1)
@@ -74,6 +87,7 @@ var initDatabaseCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(initDatabaseCmd)
 	initDatabaseCmd.Flags().StringP("room", "r", "", "Room file to populate game with")
+	initDatabaseCmd.Flags().StringP("database", "d", "", "da database")
 
 	// Here you will define your flags and configuration settings.
 

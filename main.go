@@ -27,23 +27,23 @@ func setupFileServer(dir string) http.Handler {
 	return fileHandler
 }
 
-func setupRoutes(controller NetworkController) *mux.Router {
+func setupRoutes(staticFolder string, controller NetworkController) *mux.Router {
 	r := mux.NewRouter()
 	wapi := r.PathPrefix("/ws").Subrouter()
 	wapi.HandleFunc("/{roomId}", controller.WsHandler)
 
 	// TODO: The static router should be done in nginx I think
-	staticFileHandler := setupFileServer("frontend")
+	staticFileHandler := setupFileServer(staticFolder)
 	r.PathPrefix("/").Handler(staticFileHandler)
 
 	return r
 }
 
-func Start() {
+func Start(frontend, db string) {
 	InitLogger(os.Stdout, os.Stdout, os.Stdout, os.Stderr)
 
-	controller := NewNetworkController()
-	mux := setupRoutes(controller)
+	controller := NewNetworkController(db)
+	mux := setupRoutes(frontend, controller)
 
 	Info.Println("Starting")
 	runHttpServer("0.0.0.0:5658", mux)
