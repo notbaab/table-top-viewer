@@ -11,11 +11,12 @@ import (
 
 // a backend controller abstracts handling and managing websocket connections
 type NetworkController struct {
+	db    string
 	Rooms map[string]*Room
 }
 
-func NewNetworkController() NetworkController {
-	controller := NetworkController{Rooms: make(map[string]*Room)}
+func NewNetworkController(db string) NetworkController {
+	controller := NetworkController{db: db, Rooms: make(map[string]*Room)}
 	return controller
 }
 
@@ -38,11 +39,17 @@ func (nc NetworkController) WsHandler(writer http.ResponseWriter, request *http.
 		log.Println(err)
 		return
 	}
+
 	// get or create the room.
 	// TODO: Database query here
 	room, exists := nc.Rooms[roomId]
 	if !exists {
-		room = NewRoom()
+		room, err = NewRoom(roomId, nc.db)
+		if err != nil {
+			Error.Printf("Couldn't find room %s, error %s", roomId, err.Error())
+			return
+		}
+		Error.Printf("%+v", room)
 		nc.Rooms[roomId] = room
 		go room.run()
 	}

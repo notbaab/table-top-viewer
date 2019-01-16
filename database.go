@@ -60,6 +60,18 @@ func GetGame(db *sqlx.DB, id int) (Game, error) {
 	return game, nil
 }
 
+func FindGame(db *sqlx.DB, url string) (Game, error) {
+	game := Game{}
+	Error.Printf("Looking for %s\n ", url)
+	err := db.Get(&game, "SELECT * FROM Game WHERE url=?", url)
+
+	if err != nil {
+		return game, err
+	}
+
+	return game, nil
+}
+
 func SetupDatabase(database string) *sqlx.DB {
 	db := sqlx.MustConnect("sqlite3", database)
 	runSchema(db)

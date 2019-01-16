@@ -17,7 +17,12 @@ type WelcomeMessage struct {
 	Message string `json:"message"`
 }
 
+type GameState struct {
+	State json.RawMessage `json:"state"`
+}
+
 func MakeConnectionMessage(client Client) (*Message, error) {
+	//
 	wm := WelcomeMessage{Message: "hello"}
 
 	rawClientData, err := json.Marshal(wm)

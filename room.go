@@ -1,12 +1,16 @@
 package table_top_viewer
 
 import (
-	// "encoding/json"
+	"encoding/json"
 	"github.com/gorilla/websocket"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Room struct {
 	Clients map[*Client]bool
+
+	game Game
 
 	broadcast  chan Message
 	register   chan *Client
@@ -22,13 +26,22 @@ func (r *Room) CleanUpHandler(c Client) {
 	}
 }
 
-func NewRoom() *Room {
+func NewRoom(url, database string) (*Room, error) {
+	Info.Printf("Data base is %s", database)
+	db := sqlx.MustConnect("sqlite3", database)
+	game, err := FindGame(db, url)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &Room{
 		Clients:    make(map[*Client]bool),
 		broadcast:  make(chan Message, 5),
 		register:   make(chan *Client, 5),
 		unregister: make(chan *Client, 5),
-	}
+		game:       game,
+	}, nil
 }
 
 func (r *Room) run() {
@@ -62,15 +75,26 @@ func (r *Room) doMessage(message Message, srcClient *Client) error {
 func (r *Room) AddClient(conn *websocket.Conn) (Client, error) {
 	client := NewClient(conn, r)
 
-	connectionMessage, err := MakeConnectionMessage(client)
-	r.register <- &client
-
+	state := GameState{State: json.RawMessage(r.game.GameData)}
+	rawState, err := json.Marshal(state)
 	if err != nil {
 		Error.Printf("Can't make connection message, bailing. Err: %s", err.Error())
 		return client, err
 	}
+	rawJsonData := json.RawMessage(rawState)
 
-	err = client.send(*connectionMessage)
+	fullMessage := Message{Event: "state", Data: &rawJsonData}
+
+	Error.Printf("Sblah")
+	Error.Printf("%+v", r)
+	r.register <- &client
+
+	// if err != nil {
+	// 	Error.Printf("Can't make connection message, bailing. Err: %s", err.Error())
+	// 	return client, err
+	// }
+
+	err = client.send(fullMessage)
 	if err != nil {
 		Error.Printf("Can't format connection message, bailing. Err: %s", err.Error())
 		return client, err
