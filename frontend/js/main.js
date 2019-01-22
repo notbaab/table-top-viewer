@@ -1,7 +1,8 @@
 function main(w) {
   w.app = new App();
   w.app.init();
-  w.app.setCurrentMap("img/map.jpg");
+  w.app.start();
+  // w.app.loadMap("img/map.jpg");
 }
 
 window.onload = function() {
@@ -13,6 +14,7 @@ function App() {
   this.connection = new FancyWebSocket( settings.webSocketUrl );
   console.log(this.connection.state());
   this.events = [];
+  this.imageLoader = new ImageLoader();
 
   // TODO: Set default
   this.background = undefined;
@@ -22,8 +24,10 @@ function App() {
   };
 
   this.view = new View(document.getElementById(settings.canvasId));
+  this.world = new World();
 
   this.connection.bind( "connect", this.handleInitialConnection, this );
+  this.connection.bind( "state", this.handleState, this );
   this.connection.bind( "message", this.onMessage, this );
 }
 
@@ -41,6 +45,37 @@ App.prototype = {
   handleInitialConnection: function(msg) {
     console.log("Doing initial connection");
     console.log(msg);
+    // Simple test to flex the backend until something happens
+    this.connection.send("test", {data: 1})
+  },
+
+  handleState: function(msg) {
+    console.log("here");
+    this.handleInitialState(msg);
+    // this.loadMap(msg.background);
+    // sets the new state what it
+    this.state = msg.state;
+  },
+
+  handleInitialState: function(msg) {
+    console.log("here");
+    console.log(msg);
+    this.state = msg.state;
+    // sets the new state what it
+    this.loadMap(msg.state.map.img_url);
+    this.loadPlayers(msg.state.players);
+  },
+
+  loadPlayers: function(players) {
+    let that = this
+    for (var i = 0; i < players.length; i++) {
+      let loadPromise = this.imageLoader.getImage(players[i].avatar_url);
+      let playerState = players[i];
+      loadPromise.then(function(img) {
+        that.world.addPlayerUnit(playerState, img);
+      })
+    }
+
   },
 
   onMessage: function(msg) {
@@ -48,74 +83,75 @@ App.prototype = {
     console.log(msg);
   },
 
-  setCurrentMap: function(src) {
-    let img = new Image();
-    img.src = src;
-    let ctx = this.context;
+  loadMap: function(src) {
     let that = this;
-    img.onload = function() {
-      that.background = img;
-      that.scaleBackgroundToFull();
-      that.postBackgroundLoad();
-    };
+    let backgroundPromise = this.imageLoader.getImage(src);
+
+    backgroundPromise.then(this.postBackgroundLoad.bind(this),
+                           this.onImageLoadError.bind(this));
   },
 
-  postBackgroundLoad() {
-    // start loading the new image now
-    let wizardImg = new Image();
-    wizardImg.src = "img/wizard.png";
+  onImageLoadError(img) {
+    console.log(img);
+  },
 
-    this.fullBoxWidth = this.background.width / settings.gridSpace.x;
-    this.fullBoxHeight = this.background.height / settings.gridSpace.y;
+  createPlayerUnit(playerState, loadedImg) {
+    let frames = [
+      { x: 0, y: 0, width: img.width, height: img.height},
+    ];
 
-    this.world = new World(this.fullBoxWidth, this.fullBoxHeight,
-                           settings.gridSpace.x, settings.gridSpace.y);
+    return new PlayerUnit(img, frames, )
+
+  },
+
+  // called after the background image is loaded
+  postBackgroundLoad(img) {
+    this.world.setNewBackground(img);
+    this.world.setNewGridBox(this.state.map.grid_space[0], this.state.map.grid_space[1]);
+    this.view.addDrawable(this.world);
+
+    this.background = img;
+    this.scaleBackgroundToFull();
+
     this.setupMouseListener();
-
-    // TODO: Avoid this vs that pattern, I don't like it...
-    let that = this;
-
-
-    wizardImg.onload = function() {
-      // TODO: Do like a proper frame thingamjig. For now
-      // we know it's just a single image
-      let frames = [
-        { x: 0, y: 0, width: wizardImg.width, height: wizardImg.height},
-      ];
-
-      let player = new PlayerUnit(wizardImg, frames, 1, 7, that.fullBoxWidth, that.fullBoxHeight);
-
-      that.world.addObject(player);
-      that.view.addDrawable(that.world);
-
-      // TODO: Use promises
-      that.start();
-    };
   },
+
+ //  getImage(url) {
+ //    return new Promise(function(resolve, reject){
+ //        var img = new Image()
+ //        img.onload = function(){
+ //            resolve(img)
+ //        }
+ //        img.onerror = function(){
+ //            reject(img)
+ //        }
+ //        img.src = url
+ //    })
+ // },
 
   setupMouseListener: function() {
     let that = this;
     this.view.mouse.addEventListener("mousedown", (e) => {
       // convert the x and y coordinates to world coordinates and pass to the
       // world on mouseClick
-      let worldCoordinates = this.view.toWorld(e.pageX, e.pageY);
+      let worldCoordinates = that.view.toWorld(e.pageX, e.pageY);
       // only call the world mouse click if the coordinates are in the worlds
-      if (worldCoordinates.x < 0 || worldCoordinates.x > this.background.width ||
-        worldCoordinates.y < 0 || worldCoordinates.y > this.background.height){
+      if (worldCoordinates.x < 0 || worldCoordinates.x > that.background.width ||
+        worldCoordinates.y < 0 || worldCoordinates.y > that.background.height){
         return;
       }
 
-      this.world.mouseClick(worldCoordinates.x, worldCoordinates.y);
+      that.world.mouseClick(worldCoordinates.x, worldCoordinates.y);
     });
   },
 
   start: function() {
-    this.view.start(this.background);
+    this.view.start();
     this.loop();
   },
 
   loop: function() {
-    that = this;
+    let that = this;
     this.view.display();
     requestAnimationFrame(() => {
       that.loop();

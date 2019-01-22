@@ -5,6 +5,11 @@ class GridMover {
     this.gridBoxWidth = gridBoxWidth;
     this.gridBoxHeight = gridBoxHeight;
   }
+
+  setGridDimensions(gridBoxWidth, gridBoxHeight) {
+    this.gridBoxWidth = gridBoxWidth;
+    this.gridBoxHeight = gridBoxHeight
+  }
 }
 
 class Drawable {

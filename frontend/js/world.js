@@ -1,17 +1,28 @@
 class World {
-  constructor(gridBoxWidth, gridBoxHeight, gridWidth, gridHeight) {
-    this.gridBoxWidth = gridBoxWidth;
-    this.gridBoxHeight = gridBoxHeight;
+  constructor() {
+    this.objects = [];
+    this.background = undefined;
+    this.selectedObject = undefined;
+  }
+
+  setNewGridBox(gridWidth, gridHeight) {
     this.gridWidth = gridWidth;
     this.gridHeight = gridHeight;
 
-    // some book keeping variables to draw some extra data
-    this.pixelWidth = gridWidth * this.gridBoxWidth;
-    this.pixelHeight = gridHeight * this.gridBoxHeight;
-    this.boxWidth =
+    // width in pixels
+    this.gridBoxWidth = this.background.width / this.gridWidth;
+    this.gridBoxHeight = this.background.height / this.gridHeight;
 
-    this.objects = [];
-    this.selectedObject = undefined;
+    this.pixelWidth = this.gridWidth * this.gridBoxWidth;
+    this.pixelHeight = this.gridHeight * this.gridBoxHeight;
+
+    for (var i = 0; i < this.objects.length; i++) {
+      this.objects[i].setGridDimensions(this.gridBoxWidth, this.gridBoxHeight);
+    }
+  }
+
+  setNewBackground(img) {
+    this.background = img;
   }
 
   toGrid(x, y) {
@@ -21,10 +32,15 @@ class World {
     };
   }
 
+  // This draws everything. Slow but we don't do it that much...
   draw(ctx, startX, endX, startY, endY) {
+    // draw the background first
+    ctx.drawImage(this.background, 0, 0);
+
     if (startX !== undefined) {
       // drawing a subset of the world
     }
+
     // draw the objects
     for (var i = 0; i < this.objects.length; i++) {
       let obj = this.objects[i]
@@ -58,6 +74,16 @@ class World {
     this.objects.push(object);
   }
 
+  addPlayerUnit(state, loadedImage) {
+    let frames = [
+      { x: 0, y: 0, width: loadedImage.width, height: loadedImage.height},
+    ];
+
+    let player = new PlayerUnit(loadedImage, frames, state.location[0], state.location[1],
+                                this.gridBoxWidth, this.gridBoxHeight);
+    this.addObject(player);
+  }
+
   moveObject(obj, gridX, gridY) {
     obj.gridX = gridX;
     obj.gridY = gridY;
@@ -73,6 +99,7 @@ class World {
 
   mouseClick(x, y) {
     let grid = this.toGrid(x, y);
+    console.log("Selecting");
 
     if (this.selectedObject &&
       this.selectedObject.gridX === grid.x &&

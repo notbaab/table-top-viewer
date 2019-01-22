@@ -131,9 +131,9 @@ function View(canvas) {
 }
 
 View.prototype = {
-  start(img) {
+  start() {
     this.mouse.start(this.canvas);
-    this.img = img;
+    // this.img = img;
     // resizeCanvas();
     // window.addEventListener("resize", resizeCanvas);
   },
@@ -166,7 +166,7 @@ View.prototype = {
 
     // draw the background image first.
     // TODO: Should we move this to world as well?
-    this.ctx.drawImage(this.img, 0, 0);
+    // this.ctx.drawImage(this.img, 0, 0);
 
     // Loop over the drawables and call draw.
     for (var i = 0; i < this.drawables.length; i++) {
