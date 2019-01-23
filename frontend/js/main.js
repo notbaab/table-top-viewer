@@ -1,8 +1,6 @@
 function main(w) {
   w.app = new App();
-  w.app.init();
   w.app.start();
-  // w.app.loadMap("img/map.jpg");
 }
 
 window.onload = function() {
@@ -11,6 +9,13 @@ window.onload = function() {
 
 // should read the settings here maybe?
 function App() {
+  this.canvas = document.getElementById(settings.canvasId);
+  this.context = this.canvas.getContext("2d");
+
+  // size canvas to the given size
+  this.canvas.width = window.innerWidth;
+  this.canvas.height = window.innerHeight;
+
   this.connection = new FancyWebSocket( settings.webSocketUrl );
   console.log(this.connection.state());
   this.events = [];
@@ -18,10 +23,6 @@ function App() {
 
   // TODO: Set default
   this.background = undefined;
-  this.windowSize = {
-    width: window.innerWidth,
-    height: window.innerHeight,
-  };
 
   this.view = new View(document.getElementById(settings.canvasId));
   this.world = new World();
@@ -32,16 +33,6 @@ function App() {
 }
 
 App.prototype = {
-  init: function() {
-    console.log("Doing shit");
-    this.canvas = document.getElementById(settings.canvasId);
-    this.context = this.canvas.getContext("2d");
-
-    // size canvas to the given size
-    this.canvas.width = this.windowSize.width;
-    this.canvas.height = this.windowSize.height;
-  },
-
   handleInitialConnection: function(msg) {
     console.log("Doing initial connection");
     console.log(msg);
@@ -95,15 +86,6 @@ App.prototype = {
     console.log(img);
   },
 
-  createPlayerUnit(playerState, loadedImg) {
-    let frames = [
-      { x: 0, y: 0, width: img.width, height: img.height},
-    ];
-
-    return new PlayerUnit(img, frames, )
-
-  },
-
   // called after the background image is loaded
   postBackgroundLoad(img) {
     this.world.setNewBackground(img);
@@ -115,19 +97,6 @@ App.prototype = {
 
     this.setupMouseListener();
   },
-
- //  getImage(url) {
- //    return new Promise(function(resolve, reject){
- //        var img = new Image()
- //        img.onload = function(){
- //            resolve(img)
- //        }
- //        img.onerror = function(){
- //            reject(img)
- //        }
- //        img.src = url
- //    })
- // },
 
   setupMouseListener: function() {
     let that = this;
